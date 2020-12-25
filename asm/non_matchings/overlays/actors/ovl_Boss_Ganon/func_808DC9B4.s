@@ -17,8 +17,8 @@ glabel func_808DC9B4
 /* 06180 808DC9F0 2406017C */  addiu   $a2, $zero, 0x017C         ## $a2 = 0000017C
 /* 06184 808DC9F4 0C235C4B */  jal     func_808D712C
 /* 06188 808DC9F8 AFA20060 */  sw      $v0, 0x0060($sp)
-/* 0618C 808DC9FC 3C100600 */  lui     $s0, 0x0600                ## $s0 = 06000000
-/* 06190 808DCA00 26104884 */  addiu   $s0, $s0, 0x4884           ## $s0 = 06004884
+/* 0618C 808DC9FC 3C100600 */  lui     $s0, %hi(D_06004884)                ## $s0 = 06000000
+/* 06190 808DCA00 26104884 */  addiu   $s0, $s0, %lo(D_06004884)           ## $s0 = 06004884
 /* 06194 808DCA04 0C028800 */  jal     SkelAnime_GetFrameCount
 
 /* 06198 808DCA08 02002025 */  or      $a0, $s0, $zero            ## $a0 = 06004884
@@ -94,7 +94,7 @@ glabel func_808DC9B4
 /* 062A4 808DCB14 02402025 */  or      $a0, $s2, $zero            ## $a0 = 00001C24
 /* 062A8 808DCB18 02202825 */  or      $a1, $s1, $zero            ## $a1 = 00000000
 /* 062AC 808DCB1C 02603025 */  or      $a2, $s3, $zero            ## $a2 = 00000000
-/* 062B0 808DCB20 0C00C916 */  jal     Actor_SpawnAttached
+/* 062B0 808DCB20 0C00C916 */  jal     Actor_SpawnAsChild
 
 /* 062B4 808DCB24 240700E8 */  addiu   $a3, $zero, 0x00E8         ## $a3 = 000000E8
 /* 062B8 808DCB28 26100001 */  addiu   $s0, $s0, 0x0001           ## $s0 = 00000001

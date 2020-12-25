@@ -1963,7 +1963,7 @@ glabel L8091D918
 /* 0230C 8091DE0C 8FA401BC */  lw      $a0, 0x01BC($sp)           
 /* 02310 8091DE10 86450F62 */  lh      $a1, 0x0F62($s2)           ## 00000F62
 /* 02314 8091DE14 02203025 */  or      $a2, $s1, $zero            ## $a2 = 00000F74
-/* 02318 8091DE18 0C030136 */  jal     func_800C04D8              
+/* 02318 8091DE18 0C030136 */  jal     Gameplay_CameraSetAtEye              
 /* 0231C 8091DE1C 02003825 */  or      $a3, $s0, $zero            ## $a3 = 00000F68
 .L8091DE20:
 /* 02320 8091DE20 100004BD */  beq     $zero, $zero, .L8091F118   
@@ -2110,7 +2110,7 @@ glabel L8091D918
 /* 02514 8091E014 02003825 */  or      $a3, $s0, $zero            ## $a3 = 00000F68
 /* 02518 8091E018 8FA401BC */  lw      $a0, 0x01BC($sp)           
 /* 0251C 8091E01C 86450F62 */  lh      $a1, 0x0F62($s2)           ## 00000F62
-/* 02520 8091E020 0C030136 */  jal     func_800C04D8              
+/* 02520 8091E020 0C030136 */  jal     Gameplay_CameraSetAtEye              
 /* 02524 8091E024 02203025 */  or      $a2, $s1, $zero            ## $a2 = 00000F74
 /* 02528 8091E028 3C014228 */  lui     $at, 0x4228                ## $at = 42280000
 /* 0252C 8091E02C 44814000 */  mtc1    $at, $f8                   ## $f8 = 42.00
@@ -3250,7 +3250,7 @@ glabel L8091ED18
 /* 035AC 8091F0AC AFA0001C */  sw      $zero, 0x001C($sp)         
 /* 035B0 8091F0B0 02402825 */  or      $a1, $s2, $zero            ## $a1 = 00000000
 /* 035B4 8091F0B4 2407005D */  addiu   $a3, $zero, 0x005D         ## $a3 = 0000005D
-/* 035B8 8091F0B8 0C00C916 */  jal     Actor_SpawnAttached
+/* 035B8 8091F0B8 0C00C916 */  jal     Actor_SpawnAsChild
               
 /* 035BC 8091F0BC E7B20018 */  swc1    $f18, 0x0018($sp)          
 /* 035C0 8091F0C0 3C014348 */  lui     $at, 0x4348                ## $at = 43480000

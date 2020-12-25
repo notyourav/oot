@@ -35,8 +35,8 @@ glabel func_808DC14C
 /* 05940 808DC1B0 10400007 */  beq     $v0, $zero, .L808DC1D0
 /* 05944 808DC1B4 240F0001 */  addiu   $t7, $zero, 0x0001         ## $t7 = 00000001
 /* 05948 808DC1B8 A60F01C2 */  sh      $t7, 0x01C2($s0)           ## 000001C2
-/* 0594C 808DC1BC 3C050601 */  lui     $a1, 0x0601                ## $a1 = 06010000
-/* 05950 808DC1C0 24A59A14 */  addiu   $a1, $a1, 0x9A14           ## $a1 = 06009A14
+/* 0594C 808DC1BC 3C050601 */  lui     $a1, %hi(D_06009A14)                ## $a1 = 06010000
+/* 05950 808DC1C0 24A59A14 */  addiu   $a1, $a1, %lo(D_06009A14)           ## $a1 = 06009A14
 /* 05954 808DC1C4 8FA40044 */  lw      $a0, 0x0044($sp)
 /* 05958 808DC1C8 0C0294D3 */  jal     SkelAnime_ChangeAnimTransitionRepeat
 /* 0595C 808DC1CC 24060000 */  addiu   $a2, $zero, 0x0000         ## $a2 = 00000000
@@ -96,7 +96,7 @@ glabel func_808DC14C
 /* 05A20 808DC290 AFA00020 */  sw      $zero, 0x0020($sp)
 /* 05A24 808DC294 AFA0001C */  sw      $zero, 0x001C($sp)
 /* 05A28 808DC298 24C41C24 */  addiu   $a0, $a2, 0x1C24           ## $a0 = 00001C24
-/* 05A2C 808DC29C 0C00C916 */  jal     Actor_SpawnAttached
+/* 05A2C 808DC29C 0C00C916 */  jal     Actor_SpawnAsChild
 
 /* 05A30 808DC2A0 E7B00018 */  swc1    $f16, 0x0018($sp)
 /* 05A34 808DC2A4 1000002E */  beq     $zero, $zero, .L808DC360

@@ -1,16 +1,66 @@
-#include <ultra64.h>
-#include <global.h>
-#include <vt.h>
-
-void func_8005B2AC(GraphicsContext* gfx, Vec3f* vA, Vec3f* vB, Vec3f* vC, u8 r, u8 g, u8 b);
+#include "global.h"
+#include "vt.h"
 
 // draw red poly
-void func_8005B280(GraphicsContext* gfx, Vec3f* vA, Vec3f* vB, Vec3f* vC) {
-    func_8005B2AC(gfx, vA, vB, vC, 255, 0, 0);
+void func_8005B280(GraphicsContext* gfxCtx, Vec3f* vA, Vec3f* vB, Vec3f* vC) {
+    func_8005B2AC(gfxCtx, vA, vB, vC, 255, 0, 0);
 }
 
 // draw poly
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_8005B2AC.s")
+void func_8005B2AC(GraphicsContext* gfxCtx, Vec3f* vA, Vec3f* vB, Vec3f* vC, u8 r, u8 g, u8 b) {
+    Vtx* vtxTbl;
+    Vtx* vtx;
+    f32 nx;
+    f32 ny;
+    f32 nz;
+    f32 originDist;
+
+    OPEN_DISPS(gfxCtx, "../z_collision_check.c", 713);
+
+    gSPMatrix(POLY_OPA_DISP++, &gMtxClear, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0xFF, r, g, b, 50);
+    gDPPipeSync(POLY_OPA_DISP++);
+    gDPSetRenderMode(POLY_OPA_DISP++, G_RM_FOG_SHADE_A, G_RM_AA_ZB_OPA_SURF2);
+    gSPTexture(POLY_OPA_DISP++, 0, 0, 0, G_TX_RENDERTILE, G_OFF);
+    gDPPipeSync(POLY_OPA_DISP++);
+    gDPSetCombineLERP(POLY_OPA_DISP++, SHADE, 0, PRIMITIVE, 0, SHADE, 0, PRIMITIVE, 0, 0, 0, 0, COMBINED, 0, 0, 0,
+                      COMBINED);
+    gSPClearGeometryMode(POLY_OPA_DISP++, G_CULL_BOTH);
+    gSPSetGeometryMode(POLY_OPA_DISP++, G_LIGHTING);
+    gDPPipeSync(POLY_OPA_DISP++);
+
+    vtxTbl = Graph_Alloc(gfxCtx, 3 * sizeof(Vtx));
+    if (vtxTbl == NULL) {
+        __assert("vtx_tbl != NULL", "../z_collision_check.c", 726);
+    }
+
+    vtxTbl[0].n.ob[0] = vA->x;
+    vtxTbl[0].n.ob[1] = vA->y;
+    vtxTbl[0].n.ob[2] = vA->z;
+    vtxTbl[1].n.ob[0] = vB->x;
+    vtxTbl[1].n.ob[1] = vB->y;
+    vtxTbl[1].n.ob[2] = vB->z;
+    vtxTbl[2].n.ob[0] = vC->x;
+    vtxTbl[2].n.ob[1] = vC->y;
+    vtxTbl[2].n.ob[2] = vC->z;
+
+    Math3D_DefPlane(vA, vB, vC, &nx, &ny, &nz, &originDist);
+
+    for (vtx = vtxTbl; vtx < vtxTbl + 3; vtx++) {
+        vtx->n.flag = 0;
+        vtx->n.tc[0] = 0;
+        vtx->n.tc[1] = 0;
+        vtx->n.n[0] = (u8)(s32)nx & 0xFF;
+        vtx->n.n[1] = (u8)(s32)ny & 0xFF;
+        vtx->n.n[2] = (u8)(s32)nz & 0xFF;
+        vtx->n.a = 255;
+    }
+
+    gSPVertex(POLY_OPA_DISP++, vtxTbl, 3, 0);
+    gSP1Triangle(POLY_OPA_DISP++, 0, 1, 2, 0);
+
+    CLOSE_DISPS(gfxCtx, "../z_collision_check.c", 757);
+}
 
 s32 Collider_InitBase(GlobalContext* globalCtx, Collider* collider) {
     static Collider init = { NULL, NULL, NULL, NULL, 0, 0, 0, 0, COLTYPE_UNK3, COLSHAPE_INVALID };
@@ -499,7 +549,7 @@ s32 Collider_DestroyTrisItemDim(GlobalContext* globalCtx, TriNorm* dim) {
 s32 Collider_SetTrisItemDim(GlobalContext* globalCtx, TriNorm* dest, ColliderTrisItemDimInit* src) {
     Vec3f* d;
     Vec3f* s;
-    float nx, ny, nz, nd;
+    f32 nx, ny, nz, nd;
 
     d = dest->vtx;
     s = src->vtx;
@@ -1231,9 +1281,6 @@ s32 func_8005DF74(ColliderBody* left, ColliderBody* right) {
 void func_8005DF9C(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
 }
 
-#ifdef NON_MATCHING
-// Blue EffectSpark
-// .bss problems
 void func_8005DFAC(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
     static EffectSparkInit D_8015D8A0;
     s32 sp24;
@@ -1282,14 +1329,7 @@ void func_8005DFAC(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
 
     Effect_Add(globalCtx, &sp24, EFFECT_SPARK, 0, 1, &D_8015D8A0);
 }
-#else
-void func_8005DFAC(GlobalContext* globalCtx, Collider* collider, Vec3f* v);
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_8005DFAC.s")
-#endif
 
-#ifdef NON_MATCHING
-// Green EffectSpark
-// .bss problems
 void func_8005E10C(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
     static EffectSparkInit D_8015DD68;
     s32 sp24;
@@ -1338,14 +1378,10 @@ void func_8005E10C(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
 
     Effect_Add(globalCtx, &sp24, EFFECT_SPARK, 0, 1, &D_8015DD68);
 }
-#else
-void func_8005E10C(GlobalContext* globalCtx, Collider* collider, Vec3f* v);
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_8005E10C.s")
-#endif
 
-void func_8005E26C(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
-    func_800299AC(globalCtx, v);
-    func_80062B80(globalCtx, v);
+void func_8005E26C(GlobalContext* globalCtx, Collider* collider, Vec3f* pos) {
+    EffectSsSibuki_SpawnBurst(globalCtx, pos);
+    func_80062B80(globalCtx, pos);
 }
 
 void func_8005E2A4(GlobalContext* globalCtx, Collider* collider, Vec3f* v) {
@@ -1361,7 +1397,7 @@ void func_8005E2EC(GlobalContext* globalCtx, ColliderBody* colliderBody, Collide
 
     flags = colliderBody->toucherFlags & 0x18;
     if (flags == 0 && collider->type != COLTYPE_METAL_SHIELD) {
-        func_80029CA4(globalCtx, 0, arg3);
+        EffectSsHitMark_SpawnFixedScale(globalCtx, 0, arg3);
         if (collider->actor == NULL) {
             Audio_PlaySoundGeneral(NA_SE_IT_SHIELD_BOUND, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
             return;
@@ -1371,7 +1407,7 @@ void func_8005E2EC(GlobalContext* globalCtx, ColliderBody* colliderBody, Collide
         return;
     }
     if (flags == 0) {
-        func_80029CA4(globalCtx, 3, arg3);
+        EffectSsHitMark_SpawnFixedScale(globalCtx, 3, arg3);
         if (collider->actor == NULL) {
             func_80062D60(globalCtx, arg3);
             return;
@@ -1380,7 +1416,7 @@ void func_8005E2EC(GlobalContext* globalCtx, ColliderBody* colliderBody, Collide
         return;
     }
     if (flags == 8) {
-        func_80029CA4(globalCtx, 0, arg3);
+        EffectSsHitMark_SpawnFixedScale(globalCtx, 0, arg3);
         if (collider->actor == NULL) {
             Audio_PlaySoundGeneral(NA_SE_IT_SHIELD_BOUND, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
             return;
@@ -1390,7 +1426,7 @@ void func_8005E2EC(GlobalContext* globalCtx, ColliderBody* colliderBody, Collide
         return;
     }
     if (flags == 0x10) {
-        func_80029CA4(globalCtx, 1, arg3);
+        EffectSsHitMark_SpawnFixedScale(globalCtx, 1, arg3);
         if (collider->actor == NULL) {
             Audio_PlaySoundGeneral(NA_SE_IT_REFLECTION_WOOD, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
             return;
@@ -1459,13 +1495,13 @@ void func_8005E604(GlobalContext* globalCtx, Collider* left, ColliderBody* leftB
                 func_80062E14(globalCtx, arg5, &left->actor->projectedPos);
             }
         } else if (D_8011DF40[right->type].unk01 != 5) {
-            func_80029CA4(globalCtx, D_8011DF40[right->type].unk01, arg5);
+            EffectSsHitMark_SpawnFixedScale(globalCtx, D_8011DF40[right->type].unk01, arg5);
             if ((rightBody->bumperFlags & 0x20) == 0) {
                 func_8005E4F8(left, rightBody);
             }
         }
     } else {
-        func_80029CA4(globalCtx, 0, arg5);
+        EffectSsHitMark_SpawnFixedScale(globalCtx, 0, arg5);
         if (right->actor == NULL) {
             Audio_PlaySoundGeneral(NA_SE_IT_SHIELD_BOUND, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
         } else {
@@ -1751,8 +1787,8 @@ void CollisionCheck_AC_TrisVsJntSph(GlobalContext* globalCtx, CollisionCheckCont
     }
 }
 
-extern TriNorm D_8015E230;
-extern TriNorm D_8015E268;
+static TriNorm D_8015E230;
+static TriNorm D_8015E268;
 
 void CollisionCheck_AC_JntSphVsQuad(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l,
                                     Collider* r) {
@@ -1796,8 +1832,8 @@ void CollisionCheck_AC_JntSphVsQuad(GlobalContext* globalCtx, CollisionCheckCont
     }
 }
 
-extern TriNorm D_8015E2A0;
-extern TriNorm D_8015E2D8;
+static TriNorm D_8015E2A0;
+static TriNorm D_8015E2D8;
 
 void CollisionCheck_AC_QuadVsJntSph(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l,
                                     Collider* r) {
@@ -1916,7 +1952,7 @@ void CollisionCheck_AC_CylVsTris(GlobalContext* globalCtx, CollisionCheckContext
     }
 }
 
-extern Vec3f D_8015E310;
+static Vec3f D_8015E310;
 
 void CollisionCheck_AC_TrisVsCyl(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l, Collider* r) {
     ColliderTris* left = (ColliderTris*)l;
@@ -1950,9 +1986,9 @@ void CollisionCheck_AC_TrisVsCyl(GlobalContext* globalCtx, CollisionCheckContext
     }
 }
 
-extern TriNorm D_8015E320;
-extern TriNorm D_8015E358;
-extern Vec3f D_8015E390;
+static TriNorm D_8015E320;
+static TriNorm D_8015E358;
+static Vec3f D_8015E390;
 
 void CollisionCheck_AC_CylVsQuad(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l, Collider* r) {
     ColliderCylinder* left = (ColliderCylinder*)l;
@@ -1996,9 +2032,13 @@ void CollisionCheck_AC_CylVsQuad(GlobalContext* globalCtx, CollisionCheckContext
     }
 }
 
-extern TriNorm D_8015E3A0;
-extern TriNorm D_8015E3D8;
-extern Vec3f D_8015E410;
+static s8 sBssDummy0;
+static s8 sBssDummy1;
+static s8 sBssDummy2;
+
+static TriNorm D_8015E3A0;
+static TriNorm D_8015E3D8;
+static Vec3f D_8015E410;
 
 void CollisionCheck_AC_QuadVsCyl(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l, Collider* r) {
     ColliderQuad* left = (ColliderQuad*)l;
@@ -2046,7 +2086,12 @@ void CollisionCheck_AC_QuadVsCyl(GlobalContext* globalCtx, CollisionCheckContext
     }
 }
 
-extern Vec3f D_8015E420;
+static s8 sBssDummy3;
+static s8 sBssDummy4;
+static s8 sBssDummy5;
+static s8 sBssDummy6;
+
+static Vec3f D_8015E420;
 
 void CollisionCheck_AC_TrisVsTris(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l,
                                   Collider* r) {
@@ -2086,9 +2131,14 @@ void CollisionCheck_AC_TrisVsTris(GlobalContext* globalCtx, CollisionCheckContex
     }
 }
 
-extern Vec3f D_8015E430;
-extern TriNorm D_8015E440;
-extern TriNorm D_8015E478;
+static s8 sBssDummy7;
+static s8 sBssDummy8;
+static s8 sBssDummy9;
+static s8 sBssDummy10;
+
+static Vec3f D_8015E430;
+static TriNorm D_8015E440;
+static TriNorm D_8015E478;
 
 void CollisionCheck_AC_TrisVsQuad(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l,
                                   Collider* r) {
@@ -2132,9 +2182,9 @@ void CollisionCheck_AC_TrisVsQuad(GlobalContext* globalCtx, CollisionCheckContex
     }
 }
 
-extern Vec3f D_8015E4B0;
-extern TriNorm D_8015E4C0;
-extern TriNorm D_8015E4F8;
+static Vec3f D_8015E4B0;
+static TriNorm D_8015E4C0;
+static TriNorm D_8015E4F8;
 
 void CollisionCheck_AC_QuadVsTris(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l,
                                   Collider* r) {
@@ -2180,9 +2230,9 @@ void CollisionCheck_AC_QuadVsTris(GlobalContext* globalCtx, CollisionCheckContex
     }
 }
 
-extern TriNorm D_8015E530[2];
-extern Vec3f D_8015E598;
-extern TriNorm D_8015E5A8[2];
+static TriNorm D_8015E530[2];
+static Vec3f D_8015E598;
+static TriNorm D_8015E5A8[2];
 
 void CollisionCheck_AC_QuadVsQuad(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, Collider* l,
                                   Collider* r) {
@@ -2680,7 +2730,7 @@ void func_80061F64(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx, C
     u32 flags;
     s32 i;
     f32 damage;
-    int tblLookup;
+    s32 tblLookup;
 
     if (collider->actor == NULL || !(collider->acFlags & 2)) {
         return;
@@ -2772,7 +2822,7 @@ void func_800622E4(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx) {
     }
 }
 
-extern Linef D_8015E610;
+static Linef D_8015E610;
 
 s32 CollisionCheck_generalLineOcCheck_JntSph(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx,
                                              Collider* collider, Vec3f* arg3, Vec3f* arg4) {
@@ -2793,8 +2843,8 @@ s32 CollisionCheck_generalLineOcCheck_JntSph(GlobalContext* globalCtx, Collision
     return 0;
 }
 
-extern Vec3f D_8015E628;
-extern Vec3f D_8015E638;
+static Vec3f D_8015E628;
+static Vec3f D_8015E638;
 
 s32 CollisionCheck_generalLineOcCheck_Cyl(GlobalContext* globalCtx, CollisionCheckContext* colChkCtx,
                                           Collider* collider, Vec3f* arg3, Vec3f* arg4) {
@@ -2910,35 +2960,35 @@ void func_8006285C(GlobalContext* globalCtx, ColliderTris* collider, s32 index, 
     Collider_SetTrisItemDim(globalCtx, &item->dim, init);
 }
 
-#ifdef NON_MATCHING
-// Codegen OK, .bss section problems
+// Due to an unknown reason, bss ordering changed between the 2 static Vec3f variables in the function below.
+// In order to reproduce this behavior, we need a specific number of bss variables in the file before that point.
+// For this, we introduce a certain amount of dummy variables throughout the file, which we fit inside padding added
+// by the compiler between structs like TriNorm and/or Vec3f, so they don't take space in bss.
+static s8 sBssDummy11;
+static s8 sBssDummy12;
+static s8 sBssDummy13;
+static s8 sBssDummy14;
+
 void func_800628A4(s32 arg0, ColliderJntSph* collider) {
-    s32 phi_s3;
-
-    static Vec3f D_8015CF00;
     static Vec3f D_8015E648;
+    static Vec3f D_8015CF00; // bss ordering changes here
+    s32 i;
 
-    for (phi_s3 = 0; phi_s3 < collider->count; phi_s3++) {
-        if (arg0 == collider->list[phi_s3].dim.joint) {
-            D_8015E648.x = collider->list[phi_s3].dim.modelSphere.center.x;
-            D_8015E648.y = collider->list[phi_s3].dim.modelSphere.center.y;
-            D_8015E648.z = collider->list[phi_s3].dim.modelSphere.center.z;
+    for (i = 0; i < collider->count; i++) {
+        if (arg0 == collider->list[i].dim.joint) {
+            D_8015E648.x = collider->list[i].dim.modelSphere.center.x;
+            D_8015E648.y = collider->list[i].dim.modelSphere.center.y;
+            D_8015E648.z = collider->list[i].dim.modelSphere.center.z;
             Matrix_MultVec3f(&D_8015E648, &D_8015CF00);
-            collider->list[phi_s3].dim.worldSphere.center.x = (s32)D_8015CF00.x;
-            collider->list[phi_s3].dim.worldSphere.center.y = (s32)D_8015CF00.y;
-            collider->list[phi_s3].dim.worldSphere.center.z = (s32)D_8015CF00.z;
-            collider->list[phi_s3].dim.worldSphere.radius =
-                (s32)((f32)collider->list[phi_s3].dim.modelSphere.radius * collider->list[phi_s3].dim.scale);
+            collider->list[i].dim.worldSphere.center.x = (s32)D_8015CF00.x;
+            collider->list[i].dim.worldSphere.center.y = (s32)D_8015CF00.y;
+            collider->list[i].dim.worldSphere.center.z = (s32)D_8015CF00.z;
+            collider->list[i].dim.worldSphere.radius =
+                (s32)((f32)collider->list[i].dim.modelSphere.radius * collider->list[i].dim.scale);
         }
     }
 }
-#else
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_800628A4.s")
-#endif
 
-#ifdef NON_MATCHING
-// Purple EffectSpark
-// .bss section problems
 void func_80062A28(GlobalContext* globalCtx, Vec3f* v) {
     static EffectSparkInit D_8015CF10;
     s32 sp24;
@@ -2987,13 +3037,7 @@ void func_80062A28(GlobalContext* globalCtx, Vec3f* v) {
 
     Effect_Add(globalCtx, &sp24, EFFECT_SPARK, 0, 1, &D_8015CF10);
 }
-#else
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_80062A28.s")
-#endif
 
-#ifdef NON_MATCHING
-// White EffectSpark (Bubbles?)
-// .bss section problems
 void func_80062B80(GlobalContext* globalCtx, Vec3f* v) {
     static EffectSparkInit D_8015D3D8;
     s32 sp24;
@@ -3042,9 +3086,6 @@ void func_80062B80(GlobalContext* globalCtx, Vec3f* v) {
 
     Effect_Add(globalCtx, &sp24, EFFECT_SPARK, 0, 1, &D_8015D3D8);
 }
-#else
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_80062B80.s")
-#endif
 
 void func_80062CD4(GlobalContext* globalCtx, Vec3f* v) {
     static EffectShieldParticleInit init = {
@@ -3068,9 +3109,9 @@ void func_80062CD4(GlobalContext* globalCtx, Vec3f* v) {
     init.position.x = (s32)v->x;
     init.position.y = (s32)v->y;
     init.position.z = (s32)v->z;
-    init.lightParams.posX = init.position.x;
-    init.lightParams.posY = init.position.y;
-    init.lightParams.posZ = init.position.z;
+    init.lightPoint.x = init.position.x;
+    init.lightPoint.y = init.position.y;
+    init.lightPoint.z = init.position.z;
 
     Effect_Add(globalCtx, &sp24, EFFECT_SHIELD_PARTICLE, 0, 1, &init);
 }
@@ -3111,236 +3152,159 @@ void func_80062E14(GlobalContext* globalCtx, Vec3f* v, Vec3f* arg2) {
     init.position.x = (s32)v->x;
     init.position.y = (s32)v->y;
     init.position.z = (s32)v->z;
-    init.lightParams.posX = init.position.x;
-    init.lightParams.posY = init.position.y;
-    init.lightParams.posZ = init.position.z;
+    init.lightPoint.x = init.position.x;
+    init.lightPoint.y = init.position.y;
+    init.lightPoint.z = init.position.z;
 
     Effect_Add(globalCtx, &sp24, EFFECT_SHIELD_PARTICLE, 0, 1, &init);
     Audio_PlaySoundGeneral(NA_SE_IT_REFLECTION_WOOD, arg2, 4, &D_801333E0, &D_801333E0, &D_801333E8);
 }
 
-#ifdef NON_EQUIVALENT
-// Incomplete, possibly not using the same logic
-s32 func_80062ECC(f32 actor_ac_98_10, f32 actor_ac_98_12, f32 arg2, Vec3f* ac_actor_pos, Vec3f* at_actor_pos,
-                  Vec3f* arg5, Vec3f* arg6, Vec3f* arg7) {
-    // arg5 = SP + 0xA8, unk input
-    // arg6 = SP + 0x90, unk output
-    // arg7 = SP + 0x84, unk output2
-    // sp -0x78
+#define SQXZ(vec) (SQ(vec.x) + SQ(vec.z))
+#define DOTXZ(vec1, vec2) ((vec1.x) * (vec2.x) + (vec1.z) * (vec2.z))
 
-    Vec3f delta_a3_a4_sp6C;
-    Vec3f delta_a3_a5_sp60;
-    Vec3f delta_a4_a5_sp54;
+/*
+ * Determines if the line segment connecting itemPos and itemProjPos intersects the side of a cylinder with the given
+ * radius, height, and offset at actorPos. Returns 3 if either endpoint is inside the cylinder, otherwise returns the
+ * number of points of intersection with the side of the cylinder. The locations of those points are put in out1 and
+ * out2, with out1 being closer to itemPos. Line segments that pass through both bases of the cylinder are not detected.
+ */
+s32 func_80062ECC(f32 radius, f32 height, f32 offset, Vec3f* actorPos, Vec3f* itemPos, Vec3f* itemProjPos, Vec3f* out1,
+                  Vec3f* out2) {
+    Vec3f actorToItem;
+    Vec3f actorToItemProj;
+    Vec3f itemStep;
     f32 sp50;
     f32 sp4C;
-    f32 temp_f0;
-    f32 temp_f0_3;
-    f32 temp_f12;
-    f32 temp_f14;
+    u32 phi_v0;
+    u32 phi_v1;
+    u32 phi_a1;
+    u32 phi_a2;
     f32 sp38;
-    f32 temp_f16_2;
+    f32 temp_f14;
     f32 temp_f2;
-    s32 phi_v0;
-    s32 phi_v1;
-    s32 phi_a0;
-    s32 phi_a1;
-    s32 phi_a2;
+    f32 zero = 0.0f;
+    f32 temp_f0;
+    f32 pad;
 
-    delta_a3_a4_sp6C.x = at_actor_pos->x - ac_actor_pos->x;
-    delta_a3_a4_sp6C.y = at_actor_pos->y - ac_actor_pos->y - arg2; // temp_f14
-    delta_a3_a4_sp6C.z = at_actor_pos->z - ac_actor_pos->z;
+    actorToItem.x = itemPos->x - actorPos->x;
+    actorToItem.y = itemPos->y - actorPos->y - offset;
+    actorToItem.z = itemPos->z - actorPos->z;
 
-    delta_a3_a5_sp60.x = arg5->x - ac_actor_pos->x;
-    delta_a3_a5_sp60.y = arg5->y - ac_actor_pos->y - arg2; // temp_f6
-    delta_a3_a5_sp60.z = arg5->z - ac_actor_pos->z;
+    actorToItemProj.x = itemProjPos->x - actorPos->x;
+    actorToItemProj.y = itemProjPos->y - actorPos->y - offset;
+    actorToItemProj.z = itemProjPos->z - actorPos->z;
 
-    delta_a4_a5_sp54.x = delta_a3_a5_sp60.x - delta_a3_a4_sp6C.x; // temp_f16;
-    delta_a4_a5_sp54.y = delta_a3_a5_sp60.y - delta_a3_a4_sp6C.y; // sp18; // temp_f8;
-    delta_a4_a5_sp54.z = delta_a3_a5_sp60.z - delta_a3_a4_sp6C.z; // temp_f18;
+    itemStep.x = actorToItemProj.x - actorToItem.x;
+    itemStep.y = actorToItemProj.y - actorToItem.y;
+    itemStep.z = actorToItemProj.z - actorToItem.z;
 
-    phi_v0 = 0;
-    // ada12c:    bc1f    0xada138 ~>
-    if (0.0f < delta_a3_a4_sp6C.y) {
-        phi_v0 = 1;
-    }
-    // ada138:    beqzl   v0,0xada188 ~>
-    if (phi_v0 && delta_a3_a4_sp6C.y < actor_ac_98_12) {
-        if (sqrtf(SQ(delta_a3_a4_sp6C.x) + SQ(delta_a3_a4_sp6C.z)) < actor_ac_98_10) {
-            return 3;
-        }
+    if ((actorToItem.y > 0.0f) && (actorToItem.y < height) && (sqrtf(SQ(actorToItem.x) + SQ(actorToItem.z)) < radius)) {
+        return 3;
     }
 
-    phi_v1 = 0;
-    if (0.0f < delta_a3_a5_sp60.y) { // ada19c:    bc1f    0xada1a8 ~>
-        phi_v1 = 1;
+    if ((actorToItemProj.y > 0.0f) && (actorToItemProj.y < height) &&
+        (sqrtf(SQ(actorToItemProj.x) + SQ(actorToItemProj.z)) < radius)) {
+        return 3;
     }
-    // ada1a8:    beqzl   v1,0xada1f4 ~>
-    if (phi_v1 && delta_a3_a5_sp60.y < actor_ac_98_12) {
-        if (sqrtf(SQ(delta_a3_a5_sp60.x) + SQ(delta_a3_a5_sp60.z)) < actor_ac_98_10) {
-            return 3;
-        }
-    }
-
-    // ada1f4
-    sp38 = SQ(delta_a3_a4_sp6C.x) + SQ(delta_a3_a4_sp6C.z) - SQ(actor_ac_98_10); // temp_f12;
-    temp_f2 = SQ(delta_a4_a5_sp54.x) + SQ(delta_a4_a5_sp54.z);
-    if (!(fabsf(temp_f2) < 0.008f)) { // ada23c:    bc1t    0xada2f0 ~>
-        temp_f14 = (delta_a4_a5_sp54.x + delta_a4_a5_sp54.x) * delta_a3_a4_sp6C.x +
-                   (delta_a4_a5_sp54.z + delta_a4_a5_sp54.z) * delta_a3_a4_sp6C.z;
-        temp_f0 = SQ(temp_f14);
-        temp_f12 = (4.0f * temp_f2) * sp38;
-        if (temp_f0 < temp_f12) { // ada280:    bc1f    0xada290 ~>
+    sp38 = SQXZ(actorToItem) - SQ(radius);
+    temp_f2 = SQXZ(itemStep);
+    if (!IS_ZERO(temp_f2)) {
+        temp_f14 = DOTXZ(2.0f * itemStep, actorToItem);
+        if (SQ(temp_f14) < (4.0f * temp_f2) * sp38) {
             return 0;
         }
-        // ada290
-        temp_f16_2 = temp_f0 - temp_f12;
-        temp_f0 = sqrtf(temp_f16_2);
-        if (0.0f < temp_f16_2) {
-            phi_v0 = 1;
-            phi_v1 = 1;
+        if (SQ(temp_f14) - ((4.0f * temp_f2) * sp38) > zero) {
+            phi_v1 = phi_v0 = 1;
         } else {
-            phi_v0 = 0;
             phi_v1 = 1;
+            phi_v0 = 0;
+        }
+        temp_f0 = sqrtf(SQ(temp_f14) - (4.0f * temp_f2) * sp38);
+        if (phi_v1 == 1) {
+            sp50 = (temp_f0 - temp_f14) / (2.0f * temp_f2);
+        }
+        if (phi_v0 == 1) {
+            sp4C = (-temp_f14 - temp_f0) / (2.0f * temp_f2);
         }
 
-        sp50 = (temp_f0 - temp_f14) / (temp_f2 + temp_f2); // temp_f16_3;
-        if (phi_v0 == 1) {
-            sp4C = (-temp_f14 - temp_f0) / (temp_f2 + temp_f2);
-        }
-    } else { // 0xada2f0
-        temp_f14 = ((delta_a4_a5_sp54.x + delta_a4_a5_sp54.x) * delta_a3_a4_sp6C.x) +
-                   ((delta_a4_a5_sp54.z + delta_a4_a5_sp54.z) * delta_a3_a4_sp6C.z);
-        if (!(fabsf(temp_f14) < 0.008f)) { // ada324
-            phi_v0 = 0;
-            sp50 = -sp38 / temp_f14;
-            phi_v1 = 1;
-        } // ada340:    b       0xada468
-        else {
-            if (sp38 <= 0.0f) { // ada358:    bc1f    0xada460
-                phi_a0 = phi_v0;
-                if (phi_v0 != 0) // ada360:    beqz    v0,0xada388 ~>
-                {
-                    phi_a0 = 0;
-                    // ada37C
-                    if (delta_a3_a4_sp6C.y < actor_ac_98_12) {
-                        phi_a0 = 1;
-                    }
-                }
-                phi_a1 = phi_a0;
-                // ada38C
-                phi_a0 = phi_v1;
-                if (phi_v1 != 0) {
-                    phi_a0 = 0;
-                    if (delta_a3_a5_sp60.y < actor_ac_98_12) {
-                        phi_a0 = 1;
-                    }
-                }
-                if (phi_a1) {     // ada3b4
-                    if (phi_a0) { // ada3bc
-                        *arg6 = delta_a3_a4_sp6C;
-                        *arg7 = delta_a3_a5_sp60;
-                        return 2;
-                    }
-                }
-                // ada408
-                if (phi_a1) {
-                    *arg6 = delta_a3_a4_sp6C;
-                    return 1;
-                }
-                // ada434
-                if (phi_a0) {
-                    *arg6 = delta_a3_a5_sp60;
-                    return 1;
-                }
+    } else if (!IS_ZERO(DOTXZ(2.0f * itemStep, actorToItem))) {
+        phi_v1 = 1;
+        phi_v0 = 0;
+        sp50 = -sp38 / DOTXZ(2.0f * itemStep, actorToItem);
+    } else {
+        if (sp38 <= 0.0f) {
+            phi_a1 = (0.0f < actorToItem.y) && (actorToItem.y < height);
+            phi_a2 = (0.0f < actorToItemProj.y) && (actorToItemProj.y < height);
+
+            if (phi_a1 && phi_a2) {
+                *out1 = actorToItem;
+                *out2 = actorToItemProj;
+                return 2;
             }
-            // ada460
-            return 0;
+            if (phi_a1) {
+                *out1 = actorToItem;
+                return 1;
+            }
+            if (phi_a2) {
+                *out1 = actorToItemProj;
+                return 1;
+            }
         }
+        return 0;
     }
-    // ada468 800632C8
-    if (phi_v0 == 0) { // ada468:    bnezl   v0,0xada4a4 ~>
+
+    if (phi_v0 == 0) {
         if (sp50 < 0.0f || 1.0f < sp50) {
             return 0;
         }
-    } else { // ada4a4
-        phi_a1 = 0;
-        if (sp50 < 0.0f) { // ada4ac
-            phi_a1 = 1;
+    } else {
+        phi_a1 = (sp50 < 0.0f || 1.0f < sp50);
+        phi_a2 = (sp4C < 0.0f || 1.0f < sp4C);
+
+        if (phi_a1 && phi_a2) {
+            return 0;
         }
-        // ada4b8
-        phi_a0 = phi_a1;
-        if (phi_a1 == 0) {
-            phi_a1 = 0;
-            if (1.0f < sp50) {
-                phi_a1 = 1;
-            }
-        }
-        // ada4dc
-        phi_a2 = 0;
-        if (sp4C < 0.0f) {
-            phi_a2 = 1;
-        }
-        if (phi_a2 == 0) {
-            phi_a2 = 0;
-            if (1.0f < sp4C) {
-                phi_a2 = 1;
-            }
-        }
-        if (phi_a1 != 0) {
-            if (phi_a2 != 0) {
-                return 0;
-            }
-        }
-        if (phi_a1 != 0) {
+        if (phi_a1) {
             phi_v1 = 0;
         }
-        if (phi_a2 != 0) {
+        if (phi_a2) {
             phi_v0 = 0;
         }
     }
-    if (phi_v1 == 1) {
-        temp_f0_3 = sp50 * delta_a4_a5_sp54.y + delta_a3_a4_sp6C.y;
-        if (temp_f0_3 < 0.0f || actor_ac_98_12 < temp_f0_3) {
-            phi_v1 = 0;
-        }
+
+    if ((phi_v1 == 1) && ((sp50 * itemStep.y + actorToItem.y < 0.0f) || (height < sp50 * itemStep.y + actorToItem.y))) {
+        phi_v1 = 0;
     }
-    if (phi_v0 == 1) {
-        temp_f0_3 = sp4C * delta_a4_a5_sp54.y + delta_a3_a4_sp6C.y;
-        if (temp_f0_3 < 0.0f || actor_ac_98_12 < temp_f0_3) {
-            phi_v0 = 0;
-        }
+    if ((phi_v0 == 1) && ((sp4C * itemStep.y + actorToItem.y < 0.0f) || (height < sp4C * itemStep.y + actorToItem.y))) {
+        phi_v0 = 0;
     }
     if (phi_v1 == 0 && phi_v0 == 0) {
         return 0;
-    }
-    if (phi_v1 == 1) {
-        if (phi_v0 == 1) {
-            arg6->x = sp50 * delta_a4_a5_sp54.x + delta_a3_a4_sp6C.x + ac_actor_pos->x;
-            arg6->y = sp50 * delta_a4_a5_sp54.y + delta_a3_a4_sp6C.y + ac_actor_pos->y;
-            arg6->z = sp50 * delta_a4_a5_sp54.z + delta_a3_a4_sp6C.z + ac_actor_pos->z;
-            arg7->x = sp4C * delta_a4_a5_sp54.x + delta_a3_a4_sp6C.x + ac_actor_pos->x;
-            arg7->y = sp4C * delta_a4_a5_sp54.y + delta_a3_a4_sp6C.y + ac_actor_pos->y;
-            arg7->z = sp4C * delta_a4_a5_sp54.z + delta_a3_a4_sp6C.z + ac_actor_pos->z;
-            return 2;
-        }
-    }
-    if (phi_v1 == 1) {
-        arg6->x = sp50 * delta_a4_a5_sp54.x + delta_a3_a4_sp6C.x + ac_actor_pos->x;
-        arg6->y = sp50 * delta_a4_a5_sp54.y + delta_a3_a4_sp6C.y + ac_actor_pos->y;
-        arg6->z = sp50 * delta_a4_a5_sp54.z + delta_a3_a4_sp6C.z + ac_actor_pos->z;
+    } else if ((phi_v1 == 1) && (phi_v0 == 1)) {
+        out1->x = sp50 * itemStep.x + actorToItem.x + actorPos->x;
+        out1->y = sp50 * itemStep.y + actorToItem.y + actorPos->y;
+        out1->z = sp50 * itemStep.z + actorToItem.z + actorPos->z;
+        out2->x = sp4C * itemStep.x + actorToItem.x + actorPos->x;
+        out2->y = sp4C * itemStep.y + actorToItem.y + actorPos->y;
+        out2->z = sp4C * itemStep.z + actorToItem.z + actorPos->z;
+        return 2;
+    } else if (phi_v1 == 1) {
+        out1->x = sp50 * itemStep.x + actorToItem.x + actorPos->x;
+        out1->y = sp50 * itemStep.y + actorToItem.y + actorPos->y;
+        out1->z = sp50 * itemStep.z + actorToItem.z + actorPos->z;
         return 1;
-    }
-    if (phi_v0 == 1) { // ada700
-        arg6->x = sp4C * delta_a4_a5_sp54.x + delta_a3_a4_sp6C.x + ac_actor_pos->x;
-        arg6->y = sp4C * delta_a4_a5_sp54.y + delta_a3_a4_sp6C.y + ac_actor_pos->y;
-        arg6->z = sp4C * delta_a4_a5_sp54.z + delta_a3_a4_sp6C.z + ac_actor_pos->z;
+    } else if (phi_v0 == 1) {
+        out1->x = sp4C * itemStep.x + actorToItem.x + actorPos->x;
+        out1->y = sp4C * itemStep.y + actorToItem.y + actorPos->y;
+        out1->z = sp4C * itemStep.z + actorToItem.z + actorPos->z;
         return 1;
     }
     return 1;
 }
-#else
-#pragma GLOBAL_ASM("asm/non_matchings/code/z_collision_check/func_80062ECC.s")
-#endif
+
+#undef SQXZ
+#undef DOTXZ
 
 s32 func_800635D0(s32 arg0) {
     s32 result;

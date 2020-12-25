@@ -98,8 +98,8 @@ void EnHintnuts_Init(Actor* thisx, GlobalContext* globalCtx) {
             }
         }
         EnHintnuts_SetupWait(this);
-        Actor_SpawnAttached(&globalCtx->actorCtx, &this->actor, globalCtx, ACTOR_EN_HINTNUTS, this->actor.posRot.pos.x,
-                            this->actor.posRot.pos.y, this->actor.posRot.pos.z, 0, this->actor.posRot.rot.y, 0, 0xA);
+        Actor_SpawnAsChild(&globalCtx->actorCtx, &this->actor, globalCtx, ACTOR_EN_HINTNUTS, this->actor.posRot.pos.x,
+                           this->actor.posRot.pos.y, this->actor.posRot.pos.z, 0, this->actor.posRot.rot.y, 0, 0xA);
     }
 }
 
@@ -428,11 +428,12 @@ void EnHintnuts_Leave(EnHintnuts* this, GlobalContext* globalCtx) {
     if (this->actor.bgCheckFlags & 8) {
         temp_a1 = this->actor.wallPolyRot;
     } else {
-        temp_a1 = this->actor.yawTowardsLink - func_8005A9F4(globalCtx->cameraPtrs[globalCtx->activeCamera]) - 0x8000;
+        temp_a1 =
+            this->actor.yawTowardsLink - Camera_GetCamDirYaw(globalCtx->cameraPtrs[globalCtx->activeCamera]) - 0x8000;
         if (ABS(temp_a1) >= 0x4001) {
-            temp_a1 = func_8005A9F4(globalCtx->cameraPtrs[globalCtx->activeCamera]) + 0x8000;
+            temp_a1 = Camera_GetCamDirYaw(globalCtx->cameraPtrs[globalCtx->activeCamera]) + 0x8000;
         } else {
-            temp_a1 = func_8005A9F4(globalCtx->cameraPtrs[globalCtx->activeCamera]) - (temp_a1 >> 1) + 0x8000;
+            temp_a1 = Camera_GetCamDirYaw(globalCtx->cameraPtrs[globalCtx->activeCamera]) - (temp_a1 >> 1) + 0x8000;
         }
     }
     Math_ApproxUpdateScaledS(&this->actor.shape.rot.y, temp_a1, 0x800);
@@ -443,8 +444,8 @@ void EnHintnuts_Leave(EnHintnuts* this, GlobalContext* globalCtx) {
             Flags_SetClear(globalCtx, this->actor.room);
             sPuzzleCounter = 3;
         }
-        if (this->actor.attachedB != NULL) {
-            Actor_ChangeType(globalCtx, &globalCtx->actorCtx, this->actor.attachedB, ACTORTYPE_PROP);
+        if (this->actor.child != NULL) {
+            Actor_ChangeType(globalCtx, &globalCtx->actorCtx, this->actor.child, ACTORTYPE_PROP);
         }
         Actor_Kill(&this->actor);
     }
@@ -458,8 +459,8 @@ void EnHintnuts_Freeze(EnHintnuts* this, GlobalContext* globalCtx) {
     }
     if (this->animFlagAndTimer == 0) {
         if (sPuzzleCounter == 3) {
-            if (this->actor.attachedB != NULL) {
-                Actor_ChangeType(globalCtx, &globalCtx->actorCtx, this->actor.attachedB, ACTORTYPE_PROP);
+            if (this->actor.child != NULL) {
+                Actor_ChangeType(globalCtx, &globalCtx->actorCtx, this->actor.child, ACTORTYPE_PROP);
             }
             this->animFlagAndTimer = 1;
         } else if (sPuzzleCounter == -4) {
@@ -514,7 +515,7 @@ void EnHintnuts_Update(Actor* thisx, GlobalContext* globalCtx) {
             Actor_SetHeight(&this->actor, this->skelAnime.animCurrentFrame);
         } else if (this->actionFunc == EnHintnuts_Burrow) {
             Actor_SetHeight(&this->actor, 20.0f - ((this->skelAnime.animCurrentFrame * 20.0f) /
-                                                   SkelAnime_GetFrameCount(&D_060024CC.genericHeader)));
+                                                   SkelAnime_GetFrameCount(&D_060024CC)));
         } else {
             Actor_SetHeight(&this->actor, 20.0f);
         }
@@ -522,7 +523,7 @@ void EnHintnuts_Update(Actor* thisx, GlobalContext* globalCtx) {
 }
 
 s32 EnHintnuts_OverrideLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                                Actor* thisx) {
+                                void* thisx) {
     Vec3f vec;
     f32 animCurrentFrame;
     EnHintnuts* this = THIS;
@@ -555,7 +556,7 @@ void EnHintnuts_Draw(Actor* thisx, GlobalContext* globalCtx) {
     if (this->actor.params == 0xA) {
         Gfx_DrawDListOpa(globalCtx, D_060014E0);
     } else {
-        SkelAnime_Draw(globalCtx, this->skelAnime.skeleton, this->skelAnime.limbDrawTbl, EnHintnuts_OverrideLimbDraw,
-                       NULL, &this->actor);
+        SkelAnime_DrawOpa(globalCtx, this->skelAnime.skeleton, this->skelAnime.limbDrawTbl, EnHintnuts_OverrideLimbDraw,
+                          NULL, this);
     }
 }

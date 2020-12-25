@@ -131,7 +131,7 @@ glabel L80916D30
 /* 013D8 80916DE8 E7B00010 */  swc1    $f16, 0x0010($sp)
 /* 013DC 80916DEC E7B20014 */  swc1    $f18, 0x0014($sp)
 /* 013E0 80916DF0 24C41C24 */  addiu   $a0, $a2, 0x1C24           ## $a0 = 00001C24
-/* 013E4 80916DF4 0C00C916 */  jal     Actor_SpawnAttached
+/* 013E4 80916DF4 0C00C916 */  jal     Actor_SpawnAsChild
 
 /* 013E8 80916DF8 E7A40018 */  swc1    $f4, 0x0018($sp)
 /* 013EC 80916DFC 100003DB */  beq     $zero, $zero, .L80917D6C
@@ -312,7 +312,7 @@ glabel L80916F0C
 /* 0167C 8091708C AFA70044 */  sw      $a3, 0x0044($sp)
 /* 01680 80917090 AFA60040 */  sw      $a2, 0x0040($sp)
 /* 01684 80917094 8FA4006C */  lw      $a0, 0x006C($sp)
-/* 01688 80917098 0C030136 */  jal     func_800C04D8
+/* 01688 80917098 0C030136 */  jal     Gameplay_CameraSetAtEye
 /* 0168C 8091709C 00002825 */  or      $a1, $zero, $zero          ## $a1 = 00000000
 /* 01690 809170A0 86030194 */  lh      $v1, 0x0194($s0)           ## 00000194
 /* 01694 809170A4 8FA6006C */  lw      $a2, 0x006C($sp)
@@ -335,7 +335,7 @@ glabel L80916F0C
 /* 016D8 809170E8 AFA00024 */  sw      $zero, 0x0024($sp)
 /* 016DC 809170EC E7A40010 */  swc1    $f4, 0x0010($sp)
 /* 016E0 809170F0 E7A60014 */  swc1    $f6, 0x0014($sp)
-/* 016E4 809170F4 0C00C916 */  jal     Actor_SpawnAttached
+/* 016E4 809170F4 0C00C916 */  jal     Actor_SpawnAsChild
 
 /* 016E8 809170F8 E7A80018 */  swc1    $f8, 0x0018($sp)
 /* 016EC 809170FC 86030194 */  lh      $v1, 0x0194($s0)           ## 00000194
@@ -1215,7 +1215,7 @@ glabel L80917D68
 /* 02360 80917D70 2606029C */  addiu   $a2, $s0, 0x029C           ## $a2 = 0000029C
 /* 02364 80917D74 50A00004 */  beql    $a1, $zero, .L80917D88
 /* 02368 80917D78 8FBF003C */  lw      $ra, 0x003C($sp)
-/* 0236C 80917D7C 0C030136 */  jal     func_800C04D8
+/* 0236C 80917D7C 0C030136 */  jal     Gameplay_CameraSetAtEye
 /* 02370 80917D80 26070290 */  addiu   $a3, $s0, 0x0290           ## $a3 = 00000290
 /* 02374 80917D84 8FBF003C */  lw      $ra, 0x003C($sp)
 .L80917D88:
